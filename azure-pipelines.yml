@@ -4,76 +4,75 @@
 trigger:
   branches:
     include:
-    - main
+      - main
   paths:
     include:
-    - auth-system-devops/*
+      - auth-system-devops/*
 
 # Pool del Self-Hosted Agent
 pool:
   name: 'TP04-SelfHosted-Pipeline'
 
 variables:
-  # Rutas del proyecto
   frontendPath: 'auth-system-devops/frontend'
   backendPath: 'auth-system-devops/backend'
-  
+
 stages:
 - stage: CI
   displayName: 'Continuous Integration'
   jobs:
-  
+
   # Job 1: Build Frontend (React)
   - job: BuildFrontend
     displayName: 'Build Frontend'
     steps:
-    
-    - task: NodeTool@0
-      displayName: 'Usar Node.js 22.x'
-      inputs:
-        versionSpec: '22.x'
-    
-    - script: |
-        echo "=== Frontend Build Started ==="
-        cd $(frontendPath)
-        echo "Instalando dependencias..."
-        npm ci
-        echo "Building aplicación React..."
-        npm run build
-      displayName: 'Install & Build Frontend'
-    
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publicar Artefactos Frontend'
-      inputs:
-        pathtoPublish: '$(frontendPath)/build'
-        artifactName: 'frontend-build'
-        publishLocation: 'Container'
-  
-# Job 2: Build Backend (Node.js + Express)
-- job: BuildBackend
-  displayName: 'Build Backend'
-  steps:
 
-  - task: NodeTool@0
-    displayName: 'Usar Node.js 22.x'
-    inputs:
-      versionSpec: '22.x'
+      - task: NodeTool@0
+        displayName: 'Usar Node.js 22.x'
+        inputs:
+          versionSpec: '22.x'
 
-  - script: |
-      echo "=== Backend Build Started ==="
-      cd $(backendPath)
-      echo "Instalando dependencias..."
-      npm ci
-      echo "Ejecutando tests (si existen)..."
-      npm test --passWithNoTests || echo "No tests found, continuing..."
-      echo "Verificando que server.js arranca correctamente..."
-      node server.js & sleep 5; kill $!
-      echo "Backend build completado exitosamente"
-    displayName: 'Install, Test & Validate Backend'
+      - script: |
+          echo "=== Frontend Build Started ==="
+          cd $(frontendPath)
+          echo "Instalando dependencias..."
+          npm ci
+          echo "Building aplicación React..."
+          npm run build
+        displayName: 'Install & Build Frontend'
 
-  - task: PublishBuildArtifacts@1
-    displayName: 'Publicar Artefactos Backend'
-    inputs:
-      pathtoPublish: '$(backendPath)'
-      artifactName: 'backend-build'
-      publishLocation: 'Container'
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publicar Artefactos Frontend'
+        inputs:
+          pathtoPublish: '$(frontendPath)/build'
+          artifactName: 'frontend-build'
+          publishLocation: 'Container'
+
+  # Job 2: Build Backend (Node.js + Express)
+  - job: BuildBackend
+    displayName: 'Build Backend'
+    steps:
+
+      - task: NodeTool@0
+        displayName: 'Usar Node.js 22.x'
+        inputs:
+          versionSpec: '22.x'
+
+      - script: |
+          echo "=== Backend Build Started ==="
+          cd $(backendPath)
+          echo "Instalando dependencias..."
+          npm ci
+          echo "Ejecutando tests (si existen)..."
+          npm test --passWithNoTests || echo "No tests found, continuing..."
+          echo "Verificando que server.js arranca correctamente..."
+          node server.js & sleep 5; kill $!
+          echo "Backend build completado exitosamente"
+        displayName: 'Install, Test & Validate Backend'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publicar Artefactos Backend'
+        inputs:
+          pathtoPublish: '$(backendPath)'
+          artifactName: 'backend-build'
+          publishLocation: 'Container'
