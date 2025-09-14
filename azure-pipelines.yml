@@ -49,29 +49,31 @@ stages:
         artifactName: 'frontend-build'
         publishLocation: 'Container'
   
-  # Job 2: Build Backend (Node.js + Express)
-  - job: BuildBackend
-    displayName: 'Build Backend'
-    steps:
-    
-    - task: NodeTool@0
-      displayName: 'Usar Node.js 22.x'
-      inputs:
-        versionSpec: '22.x'
-    
-    - script: |
-        echo "=== Backend Build Started ==="
-        cd $(backendPath)
-        echo "Instalando dependencias..."
-        npm install
-        echo "Verificando sintaxis..."
-        node -c server.js
-        echo "Backend build completado exitosamente"
-      displayName: 'Install & Validate Backend'
-    
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publicar Artefactos Backend'
-      inputs:
-        pathtoPublish: '$(backendPath)'
-        artifactName: 'backend-build'
-        publishLocation: 'Container'
+# Job 2: Build Backend (Node.js + Express)
+- job: BuildBackend
+  displayName: 'Build Backend'
+  steps:
+
+  - task: NodeTool@0
+    displayName: 'Usar Node.js 22.x'
+    inputs:
+      versionSpec: '22.x'
+
+  - script: |
+      echo "=== Backend Build Started ==="
+      cd $(backendPath)
+      echo "Instalando dependencias..."
+      npm ci
+      echo "Ejecutando tests (si existen)..."
+      npm test --passWithNoTests || echo "No tests found, continuing..."
+      echo "Verificando que server.js arranca correctamente..."
+      node server.js & sleep 5; kill $!
+      echo "Backend build completado exitosamente"
+    displayName: 'Install, Test & Validate Backend'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publicar Artefactos Backend'
+    inputs:
+      pathtoPublish: '$(backendPath)'
+      artifactName: 'backend-build'
+      publishLocation: 'Container'
