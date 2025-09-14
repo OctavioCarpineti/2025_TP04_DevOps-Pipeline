@@ -1,0 +1,77 @@
+# Azure DevOps Pipeline - TP04 CI
+# Multi-stage pipeline para aplicación React + Node.js
+
+trigger:
+  branches:
+    include:
+    - main
+  paths:
+    include:
+    - auth-system-devops/*
+
+# Pool del Self-Hosted Agent
+pool:
+  name: 'TP04-SelfHosted-Pipeline'
+
+variables:
+  # Rutas del proyecto
+  frontendPath: 'auth-system-devops/frontend'
+  backendPath: 'auth-system-devops/backend'
+  
+stages:
+- stage: CI
+  displayName: 'Continuous Integration'
+  jobs:
+  
+  # Job 1: Build Frontend (React)
+  - job: BuildFrontend
+    displayName: 'Build Frontend'
+    steps:
+    
+    - task: NodeTool@0
+      displayName: 'Usar Node.js 22.x'
+      inputs:
+        versionSpec: '22.x'
+    
+    - script: |
+        echo "=== Frontend Build Started ==="
+        cd $(frontendPath)
+        echo "Instalando dependencias..."
+        npm ci
+        echo "Building aplicación React..."
+        npm run build
+      displayName: 'Install & Build Frontend'
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publicar Artefactos Frontend'
+      inputs:
+        pathtoPublish: '$(frontendPath)/build'
+        artifactName: 'frontend-build'
+        publishLocation: 'Container'
+  
+  # Job 2: Build Backend (Node.js + Express)
+  - job: BuildBackend
+    displayName: 'Build Backend'
+    steps:
+    
+    - task: NodeTool@0
+      displayName: 'Usar Node.js 22.x'
+      inputs:
+        versionSpec: '22.x'
+    
+    - script: |
+        echo "=== Backend Build Started ==="
+        cd $(backendPath)
+        echo "Instalando dependencias..."
+        npm install
+        echo "Verificando sintaxis..."
+        node -c server.js
+        echo "Backend build completado exitosamente"
+      displayName: 'Install & Validate Backend'
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publicar Artefactos Backend'
+      inputs:
+        pathtoPublish: '$(backendPath)'
+        artifactName: 'backend-build'
+        publishLocation: 'Container'
